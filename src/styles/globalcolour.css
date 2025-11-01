@@ -1,0 +1,84 @@
+﻿@import "tailwindcss";
+.global-container {
+    padding: 20px;
+}
+
+.new-global-btn {
+   
+    background-color: #007bff;
+    color: white;
+}
+
+.home-btn {
+   
+    background-color: #08fc96;
+    color: white;
+
+}
+
+.global-table th {
+        background-color: #f2f2f2;
+ }
+
+.edit-btn {
+   
+    background-color: #ffc107;
+    color: white;
+  
+}
+
+.btn-cancel{
+
+  background-color: black;
+    color: white;
+   
+}
+
+.delete-btn {
+    
+    background-color: #dc3545;
+    color: white;
+ 
+}
+
+.modal-content {
+  background-color: white;
+
+}
+
+.modal-content h2 {
+
+  color: #333;
+  
+}
+
+
+.form-group label {
+
+  color: #555;
+;
+}
+
+
+.cancel-btn {
+  background-color: black; 
+  color: white;
+}
+
+.create-btn {
+  background-color: #28a745; 
+  color: white;
+}
+
+.modal-actions .btn-delete {
+    background-color: #dc3545; 
+    color: white;
+}
+
+.modal-actions .btn-delete:hover {
+    background-color: #c82333;
+}
+
+.modal-content p {
+      color: #333;
+}
