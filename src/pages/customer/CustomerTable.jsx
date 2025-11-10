@@ -1,50 +1,108 @@
-import { Component } from "react";
-//import React, {useState} from "react";
-import { Collapse, Navbar, NavbarToggler, NavItem, NavLink } from "reactstrap";
-import { Link } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from 'react-redux'; // <-- ADDED
 import '../../styles/globalcolour.css';
 import '../../styles/globalcomponents.css';
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { NavMenu } from "../../components/navmenu/NavMenu";
+
+// Import the async thunks from the new slice
+import {
+    fetchCustomersAsync,
+    addCustomerAsync,
+    updateCustomerAsync,
+    deleteCustomerAsync,
+} from '../../redux_slice/customerslice'; // <-- ADDED
 
 import AddCustomer from './AddCustomer';
 import EditCustomer from './EditCustomer';
 import DeleteCustomer from './DeleteCustomer';
 
-export class CustomerTable extends Component {
+// Convert to a functional component
+export function CustomerTable() {
+//function CustomerTable() {
 
-    static displayName = CustomerTable.name;
+    // Redux Hooks
+    const dispatch = useDispatch();
+    const { customers, loading, error } = useSelector((state) => state.customerDetails);
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            customers: [],
-            loading: true,
+    // Local UI State (still managed via useState)
+    const [showAddModal, setShowAddModal] = React.useState(false);
+    const [showEditModal, setShowEditModal] = React.useState(false);
+    const [customerToEdit, setCustomerToEdit] = React.useState(null);
+    const [showDeleteModal, setShowDeleteModal] = React.useState(false);
+    const [customerToDeleteId, setCustomerToDeleteId] = React.useState(null);
 
-            showAddModal: false,
 
-            showEditModal: false,
-            customerToEdit: null,
+    // Fetch data on component mount (equivalent to componentDidMount)
+    useEffect(() => {
+        dispatch(fetchCustomersAsync());
+    }, [dispatch]);
 
-            showDeleteModal: false,
-            customerToDeleteId: null
+
+    // --- MODAL HANDLERS ---
+    const openAddModal = () => setShowAddModal(true);
+    const closeAddModal = () => setShowAddModal(false);
+
+    const openEditModal = (customer) => {
+        setShowEditModal(true);
+        setCustomerToEdit(customer);
+    };
+    const closeEditModal = () => {
+        setShowEditModal(false);
+        setCustomerToEdit(null);
+    };
+
+    const openDeleteModal = (id) => {
+        setShowDeleteModal(true);
+        setCustomerToDeleteId(id);
+    };
+    const closeDeleteModal = () => {
+        setShowDeleteModal(false);
+        setCustomerToDeleteId(null);
+    };
+
+
+    // --- CRUD HANDLERS (Dispatching Redux Thunks) ---
+
+    // Add
+    const handleAddCustomer = async (newCustomerData) => {
+        await dispatch(addCustomerAsync(newCustomerData));
+        alert('New Customer added'); // Use Redux success/error handling for better UX
+        closeAddModal();
+        // Redux slice handles state update, no need to manually call fetch
+    };
+
+    // Edit
+    const handleUpdateCustomer = async (id, updatedCustomerData) => {
+        const customerToUpdate = {
+            id: id,
+            name: updatedCustomerData.name,
+            address: updatedCustomerData.address // Ensure 'address' is included here
         };
-    }
+        // Dispatch the thunk with the ID and the new data
+        const resultAction = await dispatch(updateCustomerAsync({
+            id: id,
+            updatedCustomerData: customerToUpdate
+        }));
 
-    componentDidMount() {
-        this.populateCustomersData();
-    }
+        if (updateCustomerAsync.fulfilled.match(resultAction)) {
+            alert('Customer Updated Successfully!');
+        } else {
+            console.error("Failed to Update:", resultAction.payload);
+            alert('Error: Could not update the Customer');
+        }
+        closeEditModal();
+        // Redux slice handles state update
+    };
 
-    openAddModal = () => this.setState({ showAddModal: true });
-    closeAddModal = () => this.setState({ showAddModal: false });
+    // Delete
+    const handleConfirmDelete = async () => {
+        await dispatch(deleteCustomerAsync(customerToDeleteId));
+        alert('Customer Deleted!'); // Use Redux success/error handling for better UX
+        closeDeleteModal();
+        // Redux slice handles state update
+    };
 
-    openEditModal = (customer) => this.setState({ showEditModal: true, customerToEdit: customer });
-    closeEditModal = () => this.setState({ showEditModal: false, customerToEdit: null });
-
-    openDeleteModal = (id) => this.setState({ showDeleteModal: true, customerToDeleteId: id });
-    closeDeleteModal = () => this.setState({ showDeleteModal: false, customerToDeleteId: null });
-
-    renderCustomersTable(customers) {
+    // --- RENDER FUNCTIONS ---
+    const renderCustomersTable = (customers) => {
         return (
             <div className="global-container">
                 <table className="global-table table table-striped" aria-labelledby="tableLabel">
@@ -63,9 +121,8 @@ export class CustomerTable extends Component {
                                 <td>{customer.id}</td>
                                 <td>{customer.name}</td>
                                 <td>{customer.address}</td>
-
-                                <td><button className="edit-btn" onClick={() => this.openEditModal(customer)}>Edit</button></td>
-                                <td><button className="delete-btn" onClick={() => this.openDeleteModal(customer.id)}>Delete</button></td>
+                                <td><button className="edit-btn" onClick={() => openEditModal(customer)}>Edit</button></td>
+                                <td><button className="delete-btn" onClick={() => openDeleteModal(customer.id)}>Delete</button></td>
                             </tr>
                         )}
                     </tbody>
@@ -74,97 +131,50 @@ export class CustomerTable extends Component {
         );
     }
 
-    render() {
-        let contents = this.state.loading
-            ? <p><em>Loading.....</em></p>
-            : this.renderCustomersTable(this.state.customers);
+    // --- MAIN RENDER ---
+    let contents;
 
-        return (
-            <div>
-                <br></br>
-                <br></br>
-                <h2 id="tableLablel" className="text=lg sm:text-xl lg:text-2xl font-bold text-wite-600">Customer</h2>
-                <br></br>
-                <button onClick={this.openAddModal} className="new-global-btn">New Customer</button>
-                <br></br>
-                {contents}
-                <br></br>
-                <br></br>
-
-                <AddCustomer
-                    show={this.state.showAddModal}
-                    onClose={this.closeAddModal}
-                    onAdd={this.handleAddCustomer}
-                />
-
-                <EditCustomer
-                    show={this.state.showEditModal}
-                    onClose={this.closeEditModal}
-                    onUpdate={this.handleUpdateCustomer}
-                    customerToEdit={this.state.customerToEdit}
-                />
-
-                <DeleteCustomer
-                    show={this.state.showDeleteModal}
-                    onClose={this.closeDeleteModal}
-                    onConfirm={this.handleConfirmDelete}
-                />
-            </div>
-        );
+    if (loading) {
+        contents = <p><em>Loading.....</em></p>;
+    } else if (error) {
+        contents = <p className="text-red-600"><em>Error: {error}</em></p>;
+    }
+    else {
+        contents = renderCustomersTable(customers);
     }
 
-    //Add
-    handleAddCustomer = async (newCustomerData) => {
-        await fetch('customers', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newCustomerData),
-        });
-        alert('New Customer added');
-        this.closeAddModal();
-        this.populateCustomersData();
-    };
 
-    //edit
-    handleUpdateCustomer = async (id, updatedCustomerData) => {
-        const customerToUpdate = {
-            id: id,
-            name: updatedCustomerData.name,
-            price: updatedCustomerData.price
-        };
+    return (
+        <div>
+            <br></br>
+            <br></br>
+            <h2 id="tableLablel" className="text=lg sm:text-xl lg:text-2xl font-bold text-wite-600">Customer</h2>
+            <br></br>
+            <button onClick={openAddModal} className="new-global-btn">New Customer</button>
+            <br></br>
+            {contents}
+            <br></br>
+            <br></br>
 
-        const response = await fetch(`customers/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(customerToUpdate),
-        });
+            <AddCustomer
+                show={showAddModal}
+                onClose={closeAddModal}
+                onAdd={handleAddCustomer}
+            />
 
-        if (response.ok) {
-            alert('Customer Updated Successfully!');
-            this.closeEditModal();
-            this.populateCustomersData();
-        }
-        else {
-            console.error("Failed to Update:, status, response.status, response. statusText");
-            alert('Error: Could not update the Customer');
-        }
-    };
+            <EditCustomer
+                show={showEditModal}
+                onClose={closeEditModal}
+                onUpdate={handleUpdateCustomer}
+                customerToEdit={customerToEdit}
+            />
 
-    //Delete
-    handleConfirmDelete = async () => {
-        const { customerToDeleteId } = this.state;
-        await fetch(`customers/${customerToDeleteId}`, {
-            method: 'DELETE',
-        });
-        alert('Prodeuc Deleted !');
-        this.closeDeleteModal();
-        this.populateCustomersData();
-    };
-
-    async populateCustomersData() {
-        const response = await fetch('customers');
-        const data = await response.json();
-        this.setState({ customers: data, loading: false });
-    }
-
+            <DeleteCustomer
+                show={showDeleteModal}
+                onClose={closeDeleteModal}
+                onConfirm={handleConfirmDelete}
+            />
+        </div>
+    );
 }
+export default CustomerTable;

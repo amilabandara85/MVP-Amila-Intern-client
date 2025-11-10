@@ -7,7 +7,8 @@ import { Layout } from './Layout';
 import { NavMenu } from './components/navmenu/NavMenu';
 
 import { StoreTable } from './pages/stores/StoreTable';
-import { CustomerTable } from './pages/Customer/CustomerTable';
+import CustomerTable from './pages/customer/CustomerTable';
+//import { CustomerTable } from './pages/customer/CustomerTable';
 import { ProductTable } from './pages/product/ProductTable';
 import { SalesTable } from './pages/sales/SalesTable';
 

@@ -2,7 +2,9 @@ import React, {useState} from 'react';
 import '../../styles/globalcolour.css';
 import '../../styles/globalcomponents.css';
 
-export function AddCustomer({show, onClose, onAdd}) {
+//export function AddCustomer({show, onClose, onAdd}) {
+function AddCustomer({ show, onClose, onAdd }) {
+
     const [name, setName] = useState('');
     const [address,setAddress] = useState('');
 
