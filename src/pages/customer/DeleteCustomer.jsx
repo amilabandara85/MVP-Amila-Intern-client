@@ -2,7 +2,9 @@ import React, {useState} from "react";
 import '../../styles/globalcolour.css';
 import '../../styles/globalcomponents.css';
 
-export function DeleteCustomer({ show, onClose, onConfirm}) {
+//export function DeleteCustomer({ show, onClose, onConfirm}) {
+function DeleteCustomer({ show, onClose, onConfirm }) {
+
     if (!show) {
         return null;
     }

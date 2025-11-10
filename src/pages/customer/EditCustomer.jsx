@@ -2,7 +2,8 @@ import React, {Component, useEffect, useState} from "react";
 import '../../styles/globalcolour.css';
 import '../../styles/globalcomponents.css';
 
-export function EditCustomer ({show, onClose, onUpdate, customerToEdit}) {
+//export function EditCustomer ({show, onClose, onUpdate, customerToEdit}) {
+function EditCustomer({ show, onClose, onUpdate, customerToEdit }) {
     
     const [name, setName] = useState('');
     const [address, setAddress] = useState('');
@@ -62,4 +63,4 @@ export function EditCustomer ({show, onClose, onUpdate, customerToEdit}) {
     );
 }
 
-export default EditCustomer
+export default EditCustomer;
