@@ -1,15 +1,15 @@
-const customerEndpoint = "api/Customers"; // Base path to the C# controller
+const customerEndpoint = "customers"; 
 
 const customerApiServices = {
-    // 1. Fetch all customers (Read)
+    // 1. Fetch all customers
     async fetchCustomers() {
         try {
-            // Note: The C# controller GetProducts is mapped to the 'Api/Customers' route
+            
             const response = await fetch(customerEndpoint);
             if (!response.ok) {
                 throw new Error(`HTTP Error! Status: ${response.status}`);
             }
-            // The C# controller GetProducts returns an array of objects
+           
             const data = await response.json();
             return data;
         } catch (error) {
@@ -18,7 +18,7 @@ const customerApiServices = {
         }
     },
 
-    // 2. Add a new customer (Create)
+    // 2. Add a new customer
     async addCustomer(customerData) {
         const response = await fetch(customerEndpoint, {
             method: 'POST',
@@ -31,25 +31,25 @@ const customerApiServices = {
         return await response.json();
     },
 
-    // 3. Update an existing customer (Update)
+    // 3. Update an existing customer
     async updateCustomer(id, customerData) {
         const response = await fetch(`${customerEndpoint}/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(customerData),
         });
-        // The C# controller PutCustomer returns NoContent (204) on success
+       
         if (!response.ok) {
             throw new Error('Failed to update customer');
         }
     },
 
-    // 4. Delete a customer (Delete)
+    // 4. Delete a customer
     async deleteCustomer(id) {
         const response = await fetch(`${customerEndpoint}/${id}`, {
             method: 'DELETE',
         });
-        // The C# controller DeleteCustomer returns NoContent (204) on success
+       
         if (!response.ok) {
             throw new Error('Failed to delete customer');
         }

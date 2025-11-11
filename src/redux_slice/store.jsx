@@ -1,12 +1,16 @@
-// src/redux/store.js
-
 import { configureStore } from '@reduxjs/toolkit';
 import customerReducer from './CustomerSlice';
-//import customerReducer from './slices/customerSlice';
+import productReducer from './ProductSlice';
+import storeReducer from './StoreSlice';
+import salesReducer from './SalesSlice';
+
 
 export const store = configureStore({
     reducer: {
-        // We name the state slice 'customerDetails' based on the name used in your original Redux documentation
+       
         customerDetails: customerReducer,
+        productDetails: productReducer,
+        storeDetails: storeReducer,
+        salesDetails: salesReducer,
     },
 });

@@ -21,7 +21,13 @@ export function EditProduct ({show, onClose, onUpdate, productToEdit}) {
 
     const handleSubmit = (event) =>{
         event.preventDefault();
-        onUpdate(productToEdit.id, {name, price});
+
+        if (!name || !price) {
+            alert('Please fill out name, and price.');
+            return;
+        }
+
+        onUpdate(productToEdit.id, { name, price });
     };
 
     return(

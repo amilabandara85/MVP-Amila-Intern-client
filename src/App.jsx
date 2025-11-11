@@ -7,8 +7,7 @@ import { Layout } from './Layout';
 import { NavMenu } from './components/navmenu/NavMenu';
 
 import { StoreTable } from './pages/stores/StoreTable';
-import CustomerTable from './pages/customer/CustomerTable';
-//import { CustomerTable } from './pages/customer/CustomerTable';
+import { CustomerTable } from './pages/customer/CustomerTable';
 import { ProductTable } from './pages/product/ProductTable';
 import { SalesTable } from './pages/sales/SalesTable';
 
@@ -37,6 +36,10 @@ function App() {
 
         <Routes>
 
+                    <Route path="/" element={<CustomerTable />} />
+                    <Route path="/" element={<ProductTable />} />
+                    <Route path="/" element={<StoreTable />} />
+                    <Route path="/" element={<SalesTable />} />
                     
         <Route path="/CustomerTable" element={<CustomerTable />} />
         <Route path="/ProductTable" element={<ProductTable />} />

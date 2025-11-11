@@ -1,52 +1,105 @@
-import { Component } from 'react';
-import React, {useState} from 'react';  
-import { Collapse, Navbar, NavbarToggler, NavItem, NavLink } from 'reactstrap';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from 'react-redux';
 import '../../styles/globalcolour.css';
 import '../../styles/globalcomponents.css';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { NavMenu } from '../../components/navmenu/NavMenu.jsx';
+import { NavMenu } from "../../components/navmenu/NavMenu";
+
+import {
+    fetchStoresAsync,
+    addStoreAsync,
+    updateStoreAsync,
+    deleteStoreAsync,
+} from '../../redux_slice/storeslice'; 
 
 import DeleteStore from './DeleteStore';
 import EditStore from './EditStore';
 import AddStore from './AddStore';
 
-export class StoreTable extends Component {
+export function StoreTable () {
     
-    static dispalyName = StoreTable.name;
+    // Redux Hooks
+    const dispatch = useDispatch();
+    const { stores, loading, error } = useSelector((state) => state.storeDetails);
 
-    constructor(props) {
-        super(props);
-        this.state = { 
-            stores: [], 
-            loading: true,
+    // Local UI State (still managed via useState)
+    const [showAddModal, setShowAddModal] = React.useState(false);
+    const [showEditModal, setShowEditModal] = React.useState(false);
+    const [storeToEdit, setStoreToEdit] = React.useState(null);
+    const [showDeleteModal, setShowDeleteModal] = React.useState(false);
+    const [storeToDeleteId, setStoreToDeleteId] = React.useState(null);
 
-            showAddModal: false,
 
-            showEditModal: false,
-            storeToEdit: null,
+    // Fetch data on component mount (equivalent to componentDidMount)
+    useEffect(() => {
+        dispatch(fetchStoresAsync());
+    }, [dispatch]);
 
-            showDeleteModal: false,       
-            storeToDeleteId: null
-         };
+
+    // --- MODAL HANDLERS ---
+    const openAddModal = () => setShowAddModal(true);
+    const closeAddModal = () => setShowAddModal(false);
+
+    const openEditModal = (store) => {
+        setShowEditModal(true);
+        setStoreToEdit(store);
+    };
+    const closeEditModal = () => {
+        setShowEditModal(false);
+        setStoreToEdit(null);
+    };
+
+    const openDeleteModal = (id) => {
+        setShowDeleteModal(true);
+        setStoreToDeleteId(id);
+    };
+    const closeDeleteModal = () => {
+        setShowDeleteModal(false);
+        setStoreToDeleteId(null);
+    };
+
+
+    // --- CRUD HANDLERS (Dispatching Redux Thunks) ---
+
+    // Add
+    const handleAddStore = async (newStoreData) => {
+        await dispatch(addStoreAsync(newStoreData));
+        alert('New Store added'); // Use Redux success/error handling for better UX
+        closeAddModal();
+        // Redux slice handles state update, no need to manually call fetch
+    };
+
+    // Edit
+    const handleUpdateStore = async (id, updatedStoreData) => {
+        const storeToUpdate = {
+            id: id,
+            name: updatedStoreData.name,
+            address: updatedStoreData.address
+        };
+        // Dispatch the thunk with the ID and the new data
+        const resultAction = await dispatch(updateStoreAsync({
+            id: id,
+            updatedStoreData: storeToUpdate
+        }));
+
+        if (updateStoreAsync.fulfilled.match(resultAction)) {
+            alert('Store Updated Successfully!');
+        } else {
+            console.error("Failed to Update:", resultAction.payload);
+            alert('Error: Could not update the Store');
+        }
+        closeEditModal();
+        // Redux slice handles state update
+    };
+
+    // Delete
+    const handleConfirmDelete = async () => {
+        await dispatch(deleteStoreAsync(storeToDeleteId));
+        alert('Store Deleted!');
+        closeDeleteModal();
+
+    };
    
-    }
-
-    componentDidMount() {
-        this.populateStoresData();
-    }
-
-   openAddModal = () => this.setState({ showAddModal: true });
-   closeAddModal = () => this.setState({ showAddModal: false});
-
-   openEditModal = (store) => this.setState({ showEditModal: true, storeToEdit:store });
-   closeEditModal = () => this.setState({ showEditModal: false, storeToEdit: null});
-
-   openDeleteModal = (id) => this.setState({ showDeleteModal: true, storeToDeleteId:id });
-   closeDeleteModal = () => this.setState({ showDeleteModal: false, storeToDeleteId: null});
-
-   
-    renderStoresTable(stores) {
+    const renderStoresTable = (stores) => {
         return (
             
             <div className="global-container">
@@ -68,8 +121,8 @@ export class StoreTable extends Component {
                             <td>{store.name}</td>
                             <td>{store.address}</td>
 
-                            <td><button className="edit-btn " onClick={() => this.openEditModal(store)}>Edit</button></td>                                                 
-                            <td><button className="delete-btn " onClick={() => this.openDeleteModal(store.id)}>Delete</button></td>
+                            <td><button className="edit-btn " onClick={() => openEditModal(store)}>Edit</button></td>                                                 
+                            <td><button className="delete-btn " onClick={() => openDeleteModal(store.id)}>Delete</button></td>
 
                                                      
                         </tr>
@@ -85,11 +138,15 @@ export class StoreTable extends Component {
     }
 
 
-    render() {
-        let contents = this.state.loading
-            ? <p><em>Loading...</em></p>
-            : this.renderStoresTable(this.state.stores);
+        let contents;
 
+        if (loading) {
+            contents = <p><em>Loading.....</em></p>;
+        } else if (error) {
+            contents = <p className="text-red-600"><em>Error: {error}</em></p>;
+        } else {
+            contents = renderStoresTable(stores);
+        }
 
         return (
             <div>
@@ -97,10 +154,10 @@ export class StoreTable extends Component {
                 <br></br>
                  <br></br>
 
-                <h2 id="tableLablel" className="text-lg sm:text-xl lg:text-2xl font-bold text-white-600">Stores</h2>
+                <h2 id="tableLabel" className="text-lg sm:text-xl lg:text-2xl font-bold text-white-600">Stores</h2>
                 
                 <br></br>
-                <button onClick={this.openAddModal} className="new-global-btn ">New Store</button>
+                <button onClick={openAddModal} className="new-global-btn ">New Store</button>
                 <br></br>
                 
       
@@ -110,23 +167,23 @@ export class StoreTable extends Component {
 
                
               <AddStore
-                show={this.state.showAddModal}
-                onClose={this.closeAddModal}
-                onAdd={this.handleAddStore}
+                show={showAddModal}
+                onClose={closeAddModal}
+                onAdd={handleAddStore}
                 />
                 
                 <EditStore
-                    show={this.state.showEditModal}
-                    onClose={this.closeEditModal}
-                    onUpdate={this.handleUpdateStore}
-                    storeToEdit={this.state.storeToEdit}
+                    show={showEditModal}
+                    onClose={closeEditModal}
+                    onUpdate={handleUpdateStore}
+                    storeToEdit={storeToEdit}
                     
                     />
 
                 <DeleteStore
-                    show={this.state.showDeleteModal}
-                    onClose={this.closeDeleteModal}
-                    onConfirm={this.handleConfirmDelete}
+                    show={showDeleteModal}
+                    onClose={closeDeleteModal}
+                    onConfirm={handleConfirmDelete}
 
                     />
 
@@ -137,74 +194,6 @@ export class StoreTable extends Component {
 
     }
 
-
-    //add
-    handleAddStore = async (newStoreData) => {
-    await fetch('stores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newStoreData),
-        
-    });
-
-    alert('New Store added');
-    this.closeAddModal();
-    this.populateStoresData();
-};
-
-
-//edit
-    handleUpdateStore = async (id, updatedStoreData) => {
-
-        const storeToUpdate = {
-            id: id,
-            name: updatedStoreData.name,
-            address: updatedStoreData.address
-        };
-
-        const response = await fetch(`stores/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(storeToUpdate),
-        });
-
-        if (response.ok) {
-            alert('Store update Successfully!');
-            this.closeEditModal();
-            this.populateStoresData();
-
-        }
-        else {
-            console.error("Failed to Update:, response.status, response. statusText");
-            alert('Error: Could not update the store');
-        }
-        
-    };
-
-    
-
-
-//Delete 
-handleConfirmDelete = async () => {
-    const {storeToDeleteId } = this.state;
-    await fetch(`stores/${storeToDeleteId}`, {
-        method: 'DELETE',
-    });
-    alert('Store Deleted!');
-    this.closeDeleteModal();
-    this.populateStoresData();
-};
-
-
-      async populateStoresData() {
-          const response = await fetch('stores');
-          const data = await response.json();
-          this.setState({ stores: data, loading: false });
-    }
-
-     
-
-    
-}
+export default StoreTable;
 
 

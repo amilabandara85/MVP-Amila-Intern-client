@@ -21,6 +21,12 @@ export function EditStore ({show, onClose, onUpdate, storeToEdit}) {
 
     const handleSubmit = (event) =>{
         event.preventDefault();
+
+        if (!name || !address) {
+            alert('Please fill out name, and address.');
+            return;
+        }
+
         onUpdate(storeToEdit.id, {name, address});
     };
 

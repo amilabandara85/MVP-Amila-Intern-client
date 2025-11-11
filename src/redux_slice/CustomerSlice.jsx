@@ -1,13 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import customerApiServices from '../service/customerservice'; // Adjust path as needed
+import customerApiServices from '../service/customerservice';
 
-// --- ASYNC THUNKS (The four C.R.U.D. actions) ---
 
 export const fetchCustomersAsync = createAsyncThunk(
     'customer/fetchCustomers',
     async (_, { rejectWithValue }) => {
         try {
-            // The service returns the customer array directly
+       
             const response = await customerApiServices.fetchCustomers();
             return response;
         } catch (error) {
@@ -20,7 +19,7 @@ export const addCustomerAsync = createAsyncThunk(
     'customer/addCustomer',
     async (newCustomerData, { rejectWithValue }) => {
         try {
-            // The service returns the newly created customer object
+            
             const response = await customerApiServices.addCustomer(newCustomerData);
             return response;
         } catch (error) {
@@ -34,7 +33,7 @@ export const updateCustomerAsync = createAsyncThunk(
     async ({ id, updatedCustomerData }, { rejectWithValue }) => {
         try {
             await customerApiServices.updateCustomer(id, updatedCustomerData);
-            // Return the updated data so the fulfilled reducer can update the state
+            
             return { id, ...updatedCustomerData };
         } catch (error) {
             return rejectWithValue(error.message || 'Failed to update customer');
@@ -47,7 +46,7 @@ export const deleteCustomerAsync = createAsyncThunk(
     async (customerId, { rejectWithValue }) => {
         try {
             await customerApiServices.deleteCustomer(customerId);
-            // Return the ID so the fulfilled reducer can remove it from state
+           
             return customerId;
         } catch (error) {
             return rejectWithValue(error.message || 'Failed to delete customer');
@@ -56,7 +55,7 @@ export const deleteCustomerAsync = createAsyncThunk(
 );
 
 
-// --- INITIAL STATE ---
+
 
 const initialState = {
     customers: [],
@@ -73,7 +72,7 @@ export const customerSlice = createSlice({
     reducers: {}, // No regular reducers needed for this example
     extraReducers: (builder) => {
         builder
-            // --- FETCH CUSTOMERS ---
+          
             .addCase(fetchCustomersAsync.pending, (state) => {
                 state.loading = true;
                 state.error = null;
@@ -89,7 +88,7 @@ export const customerSlice = createSlice({
 
             // --- ADD CUSTOMER ---
             .addCase(addCustomerAsync.fulfilled, (state, action) => {
-                // Add the new customer object returned by the server to the array
+           
                 state.customers.push(action.payload);
             })
 
@@ -97,14 +96,14 @@ export const customerSlice = createSlice({
             .addCase(updateCustomerAsync.fulfilled, (state, action) => {
                 const index = state.customers.findIndex(c => c.id === action.payload.id);
                 if (index !== -1) {
-                    // Update the customer in the array with the new data
+                    
                     state.customers[index] = action.payload;
                 }
             })
 
             // --- DELETE CUSTOMER ---
             .addCase(deleteCustomerAsync.fulfilled, (state, action) => {
-                // Remove the customer with the matching ID from the array
+               
                 state.customers = state.customers.filter(c => c.id !== action.payload);
             });
     },

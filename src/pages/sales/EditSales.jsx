@@ -41,15 +41,13 @@ export function EditSales({ show, onClose, onUpdate, salesToEdit, customers, pro
             return;
         }
 
-        const updatedData = {
-            
-            DateSold: datesold,
-            CustomerId: parseInt(customerId),
-            ProductId: parseInt(productId),
-            StoreId: parseInt(storeId)
-        };
-
-        onUpdate(salesToEdit.id, updatedData);
+       
+        onUpdate(salesToEdit.id, {
+            datesold,
+            customerId: parseInt(customerId),
+            productId: parseInt(productId),
+            storeId: parseInt(storeId)
+        });
     };
 
     return (

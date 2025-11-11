@@ -1,23 +1,24 @@
 import React, { useEffect } from "react";
-import { useDispatch, useSelector } from 'react-redux'; // <-- ADDED
+import { useDispatch, useSelector } from 'react-redux';
 import '../../styles/globalcolour.css';
 import '../../styles/globalcomponents.css';
+import { NavMenu } from "../../components/navmenu/NavMenu";
 
-// Import the async thunks from the new slice
+
 import {
     fetchCustomersAsync,
     addCustomerAsync,
     updateCustomerAsync,
     deleteCustomerAsync,
-} from '../../redux_slice/customerslice'; // <-- ADDED
+} from '../../redux_slice/customerslice'; 
 
 import AddCustomer from './AddCustomer';
 import EditCustomer from './EditCustomer';
 import DeleteCustomer from './DeleteCustomer';
 
-// Convert to a functional component
+
 export function CustomerTable() {
-//function CustomerTable() {
+
 
     // Redux Hooks
     const dispatch = useDispatch();
@@ -75,7 +76,7 @@ export function CustomerTable() {
         const customerToUpdate = {
             id: id,
             name: updatedCustomerData.name,
-            address: updatedCustomerData.address // Ensure 'address' is included here
+            address: updatedCustomerData.address 
         };
         // Dispatch the thunk with the ID and the new data
         const resultAction = await dispatch(updateCustomerAsync({
@@ -96,9 +97,9 @@ export function CustomerTable() {
     // Delete
     const handleConfirmDelete = async () => {
         await dispatch(deleteCustomerAsync(customerToDeleteId));
-        alert('Customer Deleted!'); // Use Redux success/error handling for better UX
+        alert('Customer Deleted!'); 
         closeDeleteModal();
-        // Redux slice handles state update
+        
     };
 
     // --- RENDER FUNCTIONS ---
@@ -148,7 +149,7 @@ export function CustomerTable() {
         <div>
             <br></br>
             <br></br>
-            <h2 id="tableLablel" className="text=lg sm:text-xl lg:text-2xl font-bold text-wite-600">Customer</h2>
+            <h2 id="tableLabel" className="text=lg sm:text-xl lg:text-2xl font-bold text-wite-600">Customer</h2>
             <br></br>
             <button onClick={openAddModal} className="new-global-btn">New Customer</button>
             <br></br>

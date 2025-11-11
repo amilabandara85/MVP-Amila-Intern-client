@@ -1,6 +1,4 @@
-﻿/// <reference path="redux_slice/store.jsx" />
-
-import React from 'react';
+﻿import React from 'react';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { createRoot } from 'react-dom/client';

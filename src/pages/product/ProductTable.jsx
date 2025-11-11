@@ -1,50 +1,105 @@
-import { Component } from "react";
-//import React, {useState} from "react";
-import { Collapse, Navbar, NavbarToggler, NavItem, NavLink } from "reactstrap";
-import { Link } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from 'react-redux';
 import '../../styles/globalcolour.css';
 import '../../styles/globalcomponents.css';
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { NavMenu } from "../../components/navmenu/NavMenu";
+
+import {
+    fetchProductsAsync,
+    addProductAsync,
+    updateProductAsync,
+    deleteProductAsync,
+} from '../../redux_slice/productslice'; 
 
 import AddProduct from'./AddProduct';
 import EditProduct from'./EditProduct';
 import DeleteProduct from'./DeleteProduct';
 
-export class ProductTable extends Component {
+export function ProductTable() {
 
-    static displayName = ProductTable.name;
+    // Redux Hooks
+    const dispatch = useDispatch();
+    const { products, loading, error } = useSelector((state) => state.productDetails);
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            products: [],
-            loading: true,
+    // Local UI State (still managed via useState)
+    const [showAddModal, setShowAddModal] = React.useState(false);
+    const [showEditModal, setShowEditModal] = React.useState(false);
+    const [productToEdit, setProductToEdit] = React.useState(null);
+    const [showDeleteModal, setShowDeleteModal] = React.useState(false);
+    const [productToDeleteId, setProductToDeleteId] = React.useState(null);
 
-            showAddModal: false,
 
-            showEditModal: false,
-            productToEdit: null,
+    // Fetch data on component mount (equivalent to componentDidMount)
+    useEffect(() => {
+        dispatch(fetchProductsAsync());
+    }, [dispatch]);
 
-            showDeleteModal: false,
-            productToDeleteId: null
+
+    // --- MODAL HANDLERS ---
+    const openAddModal = () => setShowAddModal(true);
+    const closeAddModal = () => setShowAddModal(false);
+
+    const openEditModal = (product) => {
+        setShowEditModal(true);
+        setProductToEdit(product);
+    };
+    const closeEditModal = () => {
+        setShowEditModal(false);
+        setProductToEdit(null);
+    };
+
+    const openDeleteModal = (id) => {
+        setShowDeleteModal(true);
+        setProductToDeleteId(id);
+    };
+    const closeDeleteModal = () => {
+        setShowDeleteModal(false);
+        setProductToDeleteId(null);
+    };
+
+
+    // --- CRUD HANDLERS (Dispatching Redux Thunks) ---
+
+    // Add
+    const handleAddProduct = async (newProductData) => {
+        await dispatch(addProductAsync(newProductData));
+        alert('New Product added'); // Use Redux success/error handling for better UX
+        closeAddModal();
+        // Redux slice handles state update, no need to manually call fetch
+    };
+
+    // Edit
+    const handleUpdateProduct = async (id, updatedProductData) => {
+        const productToUpdate = {
+            id: id,
+            name: updatedProductData.name,
+            price: updatedProductData.price
         };
-    }
+        // Dispatch the thunk with the ID and the new data
+        const resultAction = await dispatch(updateProductAsync({
+            id: id,
+            updatedProductData: productToUpdate
+        }));
 
-    componentDidMount() {
-        this.populateProductsData();
-    }
+        if (updateProductAsync.fulfilled.match(resultAction)) {
+            alert('Product Updated Successfully!');
+        } else {
+            console.error("Failed to Update:", resultAction.payload);
+            alert('Error: Could not update the Product');
+        }
+        closeEditModal();
+        // Redux slice handles state update
+    };
 
-    openAddModal = () => this.setState({ showAddModal: true});
-    closeAddModal = () => this.setState({ showAddModal: false});
+    // Delete
+    const handleConfirmDelete = async () => {
+        await dispatch(deleteProductAsync(productToDeleteId));
+        alert('Product Deleted!');
+        closeDeleteModal();
 
-    openEditModal = (product) => this.setState({showEditModal: true, productToEdit:product});
-    closeEditModal = () => this.setState({ showEditModal: false, productToEdit: null});
+    };
 
-    openDeleteModal = (id) => this.setState({ showDeleteModal:true, productToDeleteId:id});
-    closeDeleteModal = () => this.setState({ showDeleteModal:false, productToDeleteId: null});
-
-    renderProductsTable(products) {
+    const renderProductsTable = (products) => {
         return (
             <div className="global-container">
                 <table className="global-table table table-striped" aria-labelledby="tableLabel">
@@ -64,8 +119,8 @@ export class ProductTable extends Component {
                                 <td>{product.name}</td>
                                 <td>{product.price}</td>
 
-                                <td><button className="edit-btn" onClick={() => this.openEditModal(product)}>Edit</button></td>
-                                <td><button className="delete-btn" onClick={() => this.openDeleteModal(product.id)}>Delete</button></td>
+                                <td><button className="edit-btn" onClick={() => openEditModal(product)}>Edit</button></td>
+                                <td><button className="delete-btn" onClick={() => openDeleteModal(product.id)}>Delete</button></td>
                             </tr>
                         )}
                     </tbody>
@@ -74,97 +129,49 @@ export class ProductTable extends Component {
         );
     }
 
-    render() {
-        let contents = this.state.loading
-        ? <p><em>Loading.....</em></p>
-        : this.renderProductsTable(this.state.products);
+    
+        let contents;
+
+        if (loading) {
+            contents = <p><em>Loading.....</em></p>;
+        } else if (error) {
+            contents = <p className="text-red-600"><em>Error: {error}</em></p>;
+        } else {
+            contents = renderProductsTable(products);
+        }
 
         return (
             <div>
                 <br></br>
                 <br></br>
-                <h2 id="tableLablel" className="text=lg sm:text-xl lg:text-2xl font-bold text-wite-600">Product</h2>
+                <h2 id="tableLabel" className="text=lg sm:text-xl lg:text-2xl font-bold text-wite-600">Product</h2>
                 <br></br>
-                <button onClick={this.openAddModal} className="new-global-btn">New Product</button>
+                <button onClick={openAddModal} className="new-global-btn">New Product</button>
                 <br></br>
                 {contents}
                 <br></br>
                 <br></br>
 
                 <AddProduct
-                show={this.state.showAddModal}
-                onClose={this.closeAddModal}
-                onAdd={this.handleAddProduct}
+                show={showAddModal}
+                onClose={closeAddModal}
+                onAdd={handleAddProduct}
                 />
 
                 <EditProduct
-                show={this.state.showEditModal}
-                onClose={this.closeEditModal}
-                onUpdate={this.handleUpdateProduct}
-                productToEdit={this.state.productToEdit}
+                show={showEditModal}
+                onClose={closeEditModal}
+                onUpdate={handleUpdateProduct}
+                productToEdit={productToEdit}
                 />
 
                 <DeleteProduct
-                show={this.state.showDeleteModal}
-                onClose={this.closeDeleteModal}
-                onConfirm={this.handleConfirmDelete}
+                show={showDeleteModal}
+                onClose={closeDeleteModal}
+                onConfirm={handleConfirmDelete}
                 />
             </div>
         );
     }
 
-    //Add
-    handleAddProduct = async (newProductData) => {
-        await fetch('products', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(newProductData),
-        });
-        alert('New Product added');
-        this.closeAddModal();
-        this.populateProductsData();
-    };
-
-    //edit
-    handleUpdateProduct = async (id, updatedProductData) => {
-        const productToUpdate ={
-            id: id,
-            name: updatedProductData.name,
-            price: updatedProductData.price
-        };
-
-        const response = await fetch(`products/${id}`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(productToUpdate),
-        });
-
-        if (response.ok) {
-            alert('Product Updated Successfully!');
-            this.closeEditModal();
-            this.populateProductsData();
-        }
-        else {
-            console.error("Failed to Update:, status, response.status, response. statusText");
-            alert('Error: Could not update the Product');
-        }
-    };
-
-    //Delete
-    handleConfirmDelete = async () => {
-        const {productToDeleteId} = this.state;
-        await fetch(`products/${productToDeleteId}`, {
-            method: 'DELETE',
-        });
-        alert('Prodeuc Deleted !');
-        this.closeDeleteModal();
-        this.populateProductsData();
-    };
-
-    async populateProductsData () {
-        const response = await fetch('products');
-        const data = await response.json();
-        this.setState({ products: data, loading: false});
-    }
-    
-}
+    export default ProductTable;

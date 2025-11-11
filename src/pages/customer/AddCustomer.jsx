@@ -42,7 +42,7 @@ function AddCustomer({ show, onClose, onAdd }) {
                         />
                 </div>
                 <div className="form-group">
-                    <lable htmlFor="address">ADDRESS</lable>
+                    <label htmlFor="address">ADDRESS</label>
                     <input
                     type="text"
                     id="address"

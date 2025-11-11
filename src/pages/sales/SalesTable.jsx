@@ -1,41 +1,48 @@
-import { Component } from "react";
-//import React, { useState } from "react";
-import { Collapse, Navbar, NavbarToggler, NavItem, NavLink } from "reactstrap";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from 'react-redux';
 import '../../styles/globalcolour.css';
 import '../../styles/globalcomponents.css';
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { NavMenu } from "../../components/navmenu/NavMenu";
+
+import {
+    fetchSalessAsync,
+    addSalesAsync,
+    updateSalesAsync,
+    deleteSalesAsync,
+    fetchCustomersDropdownAsync,
+    fetchProductsDropdownAsync,
+    fetchStoresDropdownAsync,
+} from '../../redux_slice/SalesSlice';
 
 import AddSales from './AddSales';
 import EditSales from './EditSales';
 import DeleteSales from './DeleteSales';
 
-export class SalesTable extends Component {
-    //check class
+export function SalesTable () {
 
-    static displayName = SalesTable.name;
+    // Redux Hooks to access state and dispatch actions
+    const dispatch = useDispatch();
+    const {
+        saless,
+        customers,
+        products,
+        stores,
+        loading,
+        error
+    } = useSelector((state) => state.salesDetails);
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            saless: [],
-            customers: [],
-            products: [],
-            stores: [],
-            loading: true,
+    // Local UI State for Modals
+   
+    const [showAddModal, setShowAddModal] = React.useState(false);
 
-            showAddModal: false,
+    const [showEditModal, setShowEditModal] = React.useState(false);
+    const [salesToEdit, setSalesToEdit] = React.useState(null);
 
-            showEditModal: false,
-            salesToEdit: null,
+    const [saleToDelete, setSaleToDelete] = React.useState(null);
+    const [showDeleteModal, setShowDeleteModal] = React.useState(false);
 
-            showDeleteModal: false,
-            saleToDelete: null
-        };
-    }
 
-    formatDate(dateString) {
+    const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
         const date = new Date(dateString);
         const year = date.getFullYear();
@@ -44,57 +51,83 @@ export class SalesTable extends Component {
         return `${year}.${month}.${day}`;
     }
 
+    useEffect(() => {
+        dispatch(fetchSalessAsync());
+        dispatch(fetchCustomersDropdownAsync());
+        dispatch(fetchProductsDropdownAsync());
+        dispatch(fetchStoresDropdownAsync());
+    }, [dispatch]);
 
-    componentDidMount() {
-        this.populateSalessData();
-        this.populateCustomersData(); // <--- NEW: Fetch customers
-        this.populateProductsDropdownData();  // <--- NEW: Fetch products
-        this.populateStoresData();   // <--- NEW: Fetch stores
-    }
+  
+    const openAddModal = () => setShowAddModal(true);
+    const closeAddModal = () => setShowAddModal(false);
 
-    // NEW: Helper to fetch customer data for dropdown
-    async populateCustomersData() {
-        // Fetches data from the CustomersController.cs [HttpGet("dropdown")] endpoint
-        const response = await fetch('customers');// <-- API Call
-        const data = await response.json();
-        this.setState({ customers: data });
-    }
+    const openEditModal = (sales) => { setShowEditModal(true); setSalesToEdit(sales); };
+    const closeEditModal = () => { setShowEditModal(false); setSalesToEdit(null); };
 
-    // NEW: Helper to fetch product data for dropdown
-    async populateProductsDropdownData() {
+    const openDeleteModal = (sale) => { setSaleToDelete(sale); setShowDeleteModal(true); };
+    const closeDeleteModal = () => { setShowDeleteModal(false); setShowDeleteModal(null); };
+
+    // 1. Add HANDLER
+    const handleAddSales = async (newSalesData) => {
+        
         try {
+            await dispatch(addSalesAsync(newSalesData)).unwrap();
+
             
-            const response = await fetch('products');// <-- API Call
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            // Data will be an array of { id, name } objects, ready for the dropdown.
-            this.setState({ products: data });
+            alert('New Sale added successfully!');
+            closeAddModal();
+
         } catch (error) {
-            console.error("Failed to fetch product dropdown data:", error);
-            // Optionally, set an error state or display a user-friendly message
+            
+            console.error("Failed to add sale:", error);
+            alert(`Error: Failed to add sale. ${error.message || ''}`);
         }
-    }
+    };
 
-    // NEW: Helper to fetch store data for dropdown
-    async populateStoresData() {
-        // Fetches data from the StoresController.cs [HttpGet("dropdown")] endpoint
-        const response = await fetch('stores');// <-- API Call
-        const data = await response.json();
-        this.setState({ stores: data });
-    }
+    // 2. UPDATE HANDLER
+    const handleUpdateSales = async (id, updatedSalesData) => {
 
-    openAddModal = () => this.setState({ showAddModal: true });
-    closeAddModal = () => this.setState({ showAddModal: false });
+        
+        const fullUpdateData = {
+            ...updatedSalesData,
+            id: id 
+        };
 
-    openEditModal = (sales) => this.setState({ showEditModal: true, salesToEdit: sales });
-    closeEditModal = () => this.setState({ showEditModal: false, salesToEdit: null });
+        dispatch(updateSalesAsync({ id, updatedSalesData: fullUpdateData })) 
+            .unwrap()
+            .then(() => {
+                alert('Sale Updated Successfully!');
+                closeEditModal();
+            })
+            .catch((error) => {
+                console.error("Failed to update sale:", error);
+                alert(`Error: Could not update the Sale: ${error.message || ''}`);
+            });
+    };
 
-    openDeleteModal = (sale) => this.setState({ showDeleteModal: true, saleToDelete: sale }); 
-    closeDeleteModal = () => this.setState({ showDeleteModal: false, saleToDelete: null });
+    // 3. DELETE HANDLER
+    const handleConfirmDelete = (id) => {
+       
+        dispatch(deleteSalesAsync(id)) 
+            .unwrap()
+            .then(() => {
+                alert('Sale Deleted successfully!');
+                closeDeleteModal();
+            })
+            .catch((error) => {
+                console.error("Failed to delete sale:", error);
+                alert(`Error: Could not delete the Sale: ${error.message || ''}`);
+            });
+    };
 
-    renderSalessTable(saless) {
+    // Helper functions to map IDs to Names for display
+    const getCustomerName = (id) => customers.find(c => c.id === id)?.name || 'N/A';
+    const getProductName = (id) => products.find(p => p.id === id)?.name || 'N/A';
+    const getStoreName = (id) => stores.find(s => s.id === id)?.name || 'N/A';
+
+
+    const renderSalesTable = (saless) => {
         return (
             <div className="global-container">
                 <table className="global-table table table-striped" aria-labelledby="tableLabel">
@@ -113,13 +146,13 @@ export class SalesTable extends Component {
                         {saless.map(sales =>
                             <tr key={sales.id}>
                                 <td>{sales.id}</td>
-                                <td>{sales.customer ? sales.customer.name : 'N/A'}</td>
-                                <td>{sales.product ? sales.product.name : 'N/A'}</td>
-                                <td>{sales.store ? sales.store.name : 'N/A'}</td>
-                                <td>{this.formatDate(sales.dateSold)}</td>
+                                <td>{getCustomerName(sales.customerId)}</td>
+                                <td>{getProductName(sales.productId)}</td>
+                                <td>{getStoreName(sales.storeId)}</td>
+                                <td>{formatDate(sales.dateSold)}</td>
 
-                                <td><button className="edit-btn" onClick={() => this.openEditModal(sales)}>Edit</button></td>
-                                <td><button className="delete-btn" onClick={() => this.openDeleteModal(sales)}>Delete</button></td>
+                                <td><button className="edit-btn" onClick={() => openEditModal(sales)}>Edit</button></td>
+                                <td><button className="delete-btn" onClick={() => openDeleteModal(sales)}>Delete</button></td>
                             </tr>
                         )}
                     </tbody>
@@ -128,115 +161,55 @@ export class SalesTable extends Component {
         );
     }
 
-    render() {
-        let contents = this.state.loading
-            ? <p><em>Loading.....</em></p>
-            : this.renderSalessTable(this.state.saless);
+    let contents;
+    if (loading) {
+        contents = <p><em>Loading.....</em></p>;
+    } else if (error) {
+        contents = <p className="text-red-600"><em>Error: {error}</em></p>;
+    }
+    else {
+        contents = renderSalesTable(saless);
+    }
 
         return (
             <div>
                 <br></br>
                 <br></br>
-                <h2 id="tableLablel" className="text=lg sm:text-xl lg:text-2xl font-bold text-wite-600">Sales</h2>
+                <h2 id="tableLabel" className="text=lg sm:text-xl lg:text-2xl font-bold text-wite-600">Sales</h2>
                 <br></br>
-                <button onClick={this.openAddModal} className="new-global-btn">New Sales</button>
+                <button onClick={openAddModal} className="new-global-btn">New Sales</button>
                 <br></br>
                 {contents}
                 <br></br>
                 <br></br>
 
                 <AddSales
-                    show={this.state.showAddModal}
-                    onClose={this.closeAddModal}
-                    onAdd={this.handleAddSales}
-                    customers={this.state.customers}
-                    products={this.state.products}
-                    stores={this.state.stores}
+                    show={showAddModal}
+                    onClose={closeAddModal}
+                    onAdd={handleAddSales}
+                    customers={customers}
+                    products={products}
+                    stores={stores}
                 />
 
                 <EditSales
-                    show={this.state.showEditModal}
-                    onClose={this.closeEditModal}
-                    onUpdate={this.handleUpdateSales}
-                    salesToEdit={this.state.salesToEdit}
-                    customers={this.state.customers}
-                    products={this.state.products}
-                    stores={this.state.stores}
+                    show={showEditModal}
+                    onClose={closeEditModal}
+                    onUpdate={handleUpdateSales}
+                    salesToEdit={salesToEdit}
+                    customers={customers}
+                    products={products}
+                    stores={stores}
                 />
 
                 <DeleteSales
-                    show={this.state.showDeleteModal}
-                    onClose={this.closeDeleteModal}
-                    onDelete={this.handleConfirmDelete}
-                    sale={this.state.saleToDelete}
+                    show={showDeleteModal}
+                    onClose={closeDeleteModal}
+                    onDelete={handleConfirmDelete}
+                    sale={saleToDelete}
                 />
             </div>
         );
     }
 
-    //Add
-    handleAddSales = async (newSalesData) => {
-        await fetch('saless', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newSalesData),
-        });
-        alert('New Sales added');
-        this.closeAddModal();
-        this.populateSalessData();
-    };
-
-    //edit
-    handleUpdateSales = async (id, updatedSalesData) => {
-        const SalesToUpdate = {
-            id: id,
-            DateSold: updatedSalesData.DateSold,
-            CustomerId: updatedSalesData.CustomerId,
-            ProductId: updatedSalesData.ProductId,
-            StoreId: updatedSalesData.StoreId
-        };
-
-        const response = await fetch(`saless/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(SalesToUpdate),
-        });
-
-        if (response.ok) {
-            alert('Sales Updated Successfully!');
-            this.closeEditModal();
-            this.populateSalessData();
-        }
-        else {
-            console.error("Failed to Update:, status, response.status, response. statusText");
-            alert('Error: Could not update the Sales');
-        }
-    };
-
-    //Delete
-    handleConfirmDelete = async (id) => {
-       
-        const saleId = id || this.state.saleToDelete?.id;
-
-        if (!saleId) return;
-
-        const response = await fetch(`saless/${saleId}`, { 
-            method: 'DELETE',
-        });
-
-        if (response.ok) {
-            alert('Sale Deleted successfully!'); 
-            this.closeDeleteModal();
-            this.populateSalessData();
-        } else {
-            alert('Error: Could not delete the Sale.');
-        }
-    };
-
-    async populateSalessData() {
-        const response = await fetch('saless');
-        const data = await response.json();
-        this.setState({ saless: data, loading: false });
-    }
-
-}
+   
